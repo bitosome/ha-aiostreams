@@ -1,5 +1,5 @@
 name: AIOStreams
-version: "0.1.0"
+version: "0.1.1"
 slug: aiostreams
 description: Self-host AIOStreams, the configurable Stremio add-on aggregator
 url: https://github.com/bitosome/ha-aiostreams
@@ -17,12 +17,11 @@ options:
   admin_username: admin
   admin_password: null
   protect_configure_page: true
-  secret_key: ""
   log_level: info
 schema:
   base_url: url
   admin_username: str(1,64)
   admin_password: password
   protect_configure_page: bool
-  secret_key: password
+  secret_key: password?
   log_level: list(error|warn|info|http|verbose|debug|silly)
