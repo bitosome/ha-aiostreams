@@ -1,0 +1,7 @@
+{
+  "name": "ha-aiostreams",
+  "private": true,
+  "scripts": {
+    "test": "node --test"
+  }
+}

@@ -1,0 +1,8 @@
+{
+  "base_url": "http://127.0.0.1:3000",
+  "admin_username": "admin",
+  "admin_password": "integration-test-password",
+  "protect_configure_page": true,
+  "secret_key": "",
+  "log_level": "info"
+}

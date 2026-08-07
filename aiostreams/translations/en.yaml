@@ -1,0 +1,27 @@
+configuration:
+  base_url:
+    name: Public base URL
+    description: >-
+      Exact URL used by Stremio to reach this instance. Use HTTPS when accessing
+      AIOStreams from outside the Home Assistant host.
+  admin_username:
+    name: Administrator username
+    description: Username used to sign in to the AIOStreams dashboard.
+  admin_password:
+    name: Administrator password
+    description: >-
+      Password used to sign in to AIOStreams. Commas and line breaks are not
+      supported by AIOStreams authentication.
+  protect_configure_page:
+    name: Protect configuration page
+    description: Require the administrator login before opening the Stremio configuration page.
+  secret_key:
+    name: Existing encryption key
+    description: >-
+      Optional 64-character hexadecimal key for a migration. Leave empty on a
+      new install so a strong key is generated and persisted automatically.
+  log_level:
+    name: Log level
+    description: Amount of detail written to the add-on log.
+network:
+  3000/tcp: AIOStreams web interface and Stremio add-on endpoint
