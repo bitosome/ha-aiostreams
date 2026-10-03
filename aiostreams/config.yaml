@@ -1,5 +1,5 @@
 name: AIOStreams
-version: "0.1.0"
+version: "0.2.0"
 slug: aiostreams
 description: Self-host AIOStreams, the configurable Stremio add-on aggregator
 url: https://github.com/bitosome/ha-aiostreams
