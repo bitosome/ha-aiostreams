@@ -1,5 +1,11 @@
 # Changelog
 
+## 0.2.1
+
+- Upgrade AIOStreams to `v2.38.1`: Jellyfin Live TV, ordered audio/subtitle
+  language lists, watch-state fixes, catalog walk background lane and a new
+  Xtream builtin. Existing configuration and data carry over unchanged.
+
 ## 0.2.0
 
 - Upgrade AIOStreams to `v2.35.8` with the Jellyfin-compatible API at `/jellyfin`.
