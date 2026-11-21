@@ -1,5 +1,11 @@
 # Changelog
 
+## 0.2.3
+
+- Open Web UI page: top-aligned layout without viewport-height centring, which
+  rendered blank in the Home Assistant iOS app until the frame was resized.
+  The page now uses the active Home Assistant theme colours.
+
 ## 0.2.2
 
 - **Open Web UI** now works from anywhere Home Assistant is reachable. It

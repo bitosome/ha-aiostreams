@@ -1,4 +1,5 @@
 import assert from "node:assert/strict";
+import { createHash } from "node:crypto";
 import { mkdtempSync, readFileSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
@@ -6,6 +7,7 @@ import test from "node:test";
 
 import {
   buildEnvironment,
+  LAUNCHER_CSP,
   launcherPage,
   normalizeBaseUrl,
   resolveSecret,
@@ -87,7 +89,9 @@ test("web UI page links to the public dashboard and escapes the URL", () => {
   const page = launcherPage("https://aiostreams.example.com");
   assert.match(page, /href="https:\/\/aiostreams\.example\.com\/dashboard" target="_blank" rel="noopener noreferrer"/);
   assert.match(page, /href="https:\/\/aiostreams\.example\.com\/stremio\/configure"/);
-  assert.doesNotMatch(launcherPage('https://x.example/"><script>'), /<script>/);
+  const hostile = launcherPage('https://x.example/"><script>alert(1)</script>');
+  assert.equal(hostile.match(/<script/g).length, 1);
+  assert.match(hostile, /&#34;&#62;&#60;script&#62;alert\(1\)/);
 });
 
 test("web UI launcher answers only the ingress proxy", async () => {
@@ -109,4 +113,13 @@ test("web UI launcher answers only the ingress proxy", async () => {
   const closed = await listen("172.30.32.2");
   assert.equal((await fetch(url(closed))).status, 403);
   closed.close();
+});
+
+test("web UI page needs no viewport height and allows only its own theme script", () => {
+  const page = launcherPage("https://aiostreams.example.com");
+  assert.doesNotMatch(page, /\bvh\b/);
+  const script = page.match(/<script>([\s\S]*?)<\/script>/)[1];
+  const hash = createHash("sha256").update(script).digest("base64");
+  assert.match(LAUNCHER_CSP, new RegExp(`script-src 'sha256-${hash.replace(/[+/=]/g, "\\$&")}'`));
+  assert.equal(page.match(/<script/g).length, 1);
 });

@@ -1,4 +1,4 @@
-import { randomBytes } from "node:crypto";
+import { createHash, randomBytes } from "node:crypto";
 import { spawn } from "node:child_process";
 import { createServer } from "node:http";
 import {
@@ -136,6 +136,18 @@ export function buildEnvironment(options, secretPath, currentEnvironment = proce
   };
 }
 
+// The ingress frame is same-origin with Home Assistant, so the page can adopt
+// the active Home Assistant theme instead of the device's light/dark setting.
+const THEME_SCRIPT =
+  "try{var s=getComputedStyle(parent.document.documentElement),r=document.documentElement.style," +
+  "m={'--bg':'--primary-background-color','--fg':'--primary-text-color','--muted':'--secondary-text-color'," +
+  "'--accent':'--primary-color','--on':'--text-primary-color'};" +
+  "for(var k in m){var v=s.getPropertyValue(m[k]).trim();if(v)r.setProperty(k,v)}}catch(e){}";
+const THEME_SCRIPT_HASH = createHash("sha256").update(THEME_SCRIPT).digest("base64");
+export const LAUNCHER_CSP =
+  `default-src 'none'; style-src 'unsafe-inline'; script-src 'sha256-${THEME_SCRIPT_HASH}'; ` +
+  "base-uri 'none'; form-action 'none'";
+
 function escapeHtml(value) {
   return value.replace(/[&<>"']/g, (c) => `&#${c.charCodeAt(0)};`);
 }
@@ -149,12 +161,13 @@ export function launcherPage(baseUrl) {
 <style>
 :root{color-scheme:light dark;--bg:#fafafa;--fg:#212121;--muted:#616161;--accent:#03a9f4;--on:#fff}
 @media (prefers-color-scheme:dark){:root{--bg:#111318;--fg:#e1e1e1;--muted:#9e9e9e;--accent:#cf9ce8;--on:#1c1b1f}}
-body{margin:0;min-height:100vh;display:flex;align-items:center;justify-content:center;background:var(--bg);color:var(--fg);font:16px/1.5 system-ui,-apple-system,sans-serif}
-main{max-width:420px;padding:24px 16px;text-align:center}
+html,body{margin:0;background:var(--bg);color:var(--fg);font:16px/1.5 system-ui,-apple-system,sans-serif}
+main{max-width:420px;margin:0 auto;padding:48px 16px;text-align:center}
 h1{font-size:22px;margin:0 0 8px}p{color:var(--muted);margin:0 0 24px;overflow-wrap:anywhere}
 a{display:block;margin:12px 0;padding:14px 20px;border-radius:999px;text-decoration:none;font-weight:600}
 .primary{background:var(--accent);color:var(--on)}.secondary{border:1px solid var(--muted);color:var(--fg)}
-</style></head><body><main>
+</style>
+<script>${THEME_SCRIPT}</script></head><body><main>
 <h1>AIOStreams</h1>
 <p>Opens ${base} in a new tab.</p>
 <a class="primary" href="${base}/dashboard" target="_blank" rel="noopener noreferrer">Open dashboard</a>
@@ -178,7 +191,7 @@ export function startLauncher(baseUrl, { port = INGRESS_PORT, allowed = INGRESS_
     response.writeHead(200, {
       "Content-Type": "text/html; charset=utf-8",
       "Cache-Control": "no-store",
-      "Content-Security-Policy": "default-src 'none'; style-src 'unsafe-inline'; base-uri 'none'; form-action 'none'",
+      "Content-Security-Policy": LAUNCHER_CSP,
       "Referrer-Policy": "no-referrer",
       "X-Content-Type-Options": "nosniff",
     });
