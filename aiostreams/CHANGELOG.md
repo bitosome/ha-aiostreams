@@ -2,9 +2,11 @@
 
 ## 0.2.3
 
-- Open Web UI page: top-aligned layout without viewport-height centring, which
-  rendered blank in the Home Assistant iOS app until the frame was resized.
-  The page now uses the active Home Assistant theme colours.
+- Open Web UI page: the Home Assistant iOS app showed a blank grey panel
+  until the frame was resized. Home Assistant fades an app frame in after it
+  loads, and a fully static page could stay unpainted; the page now repaints
+  itself shortly after loading. Also: top-aligned layout without
+  viewport-height centring, and the active Home Assistant theme colours.
 
 ## 0.2.2
 

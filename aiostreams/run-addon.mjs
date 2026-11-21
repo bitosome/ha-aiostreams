@@ -138,11 +138,16 @@ export function buildEnvironment(options, secretPath, currentEnvironment = proce
 
 // The ingress frame is same-origin with Home Assistant, so the page can adopt
 // the active Home Assistant theme instead of the device's light/dark setting.
+// Home Assistant fades the frame in after its load event; the iOS app can leave
+// a fully static page unpainted until the frame is resized, so repaint a few
+// times shortly after load.
 const THEME_SCRIPT =
   "try{var s=getComputedStyle(parent.document.documentElement),r=document.documentElement.style," +
   "m={'--bg':'--primary-background-color','--fg':'--primary-text-color','--muted':'--secondary-text-color'," +
   "'--accent':'--primary-color','--on':'--text-primary-color'};" +
-  "for(var k in m){var v=s.getPropertyValue(m[k]).trim();if(v)r.setProperty(k,v)}}catch(e){}";
+  "for(var k in m){var v=s.getPropertyValue(m[k]).trim();if(v)r.setProperty(k,v)}}catch(e){}" +
+  "addEventListener('load',function(){[100,400,1000].forEach(function(t){setTimeout(function(){" +
+  "var b=document.body;b.style.opacity='0.999';requestAnimationFrame(function(){b.style.opacity=''})},t)})});";
 const THEME_SCRIPT_HASH = createHash("sha256").update(THEME_SCRIPT).digest("base64");
 export const LAUNCHER_CSP =
   `default-src 'none'; style-src 'unsafe-inline'; script-src 'sha256-${THEME_SCRIPT_HASH}'; ` +
