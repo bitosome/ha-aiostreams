@@ -1,5 +1,6 @@
 import { randomBytes } from "node:crypto";
 import { spawn } from "node:child_process";
+import { createServer } from "node:http";
 import {
   chmodSync,
   existsSync,
@@ -13,6 +14,11 @@ const DEFAULT_OPTIONS_PATH = "/data/options.json";
 const DEFAULT_SECRET_PATH = "/data/secret_key";
 const SERVER_PATH = "/app/packages/server/dist/server.js";
 const HEX_KEY = /^[0-9a-fA-F]{64}$/;
+// Home Assistant's "Open Web UI" uses ingress: the Supervisor proxies this port
+// from its own address only. AIOStreams itself cannot run under the ingress
+// path prefix, so this page links to its public base_url instead.
+const INGRESS_PORT = 8099;
+const INGRESS_PROXY = "172.30.32.2";
 
 function requiredString(value, name) {
   if (typeof value !== "string" || value.trim() === "") {
@@ -130,6 +136,60 @@ export function buildEnvironment(options, secretPath, currentEnvironment = proce
   };
 }
 
+function escapeHtml(value) {
+  return value.replace(/[&<>"']/g, (c) => `&#${c.charCodeAt(0)};`);
+}
+
+export function launcherPage(baseUrl) {
+  const base = escapeHtml(baseUrl);
+  return `<!doctype html>
+<html lang="en"><head><meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>AIOStreams</title>
+<style>
+:root{color-scheme:light dark;--bg:#fafafa;--fg:#212121;--muted:#616161;--accent:#03a9f4;--on:#fff}
+@media (prefers-color-scheme:dark){:root{--bg:#111318;--fg:#e1e1e1;--muted:#9e9e9e;--accent:#cf9ce8;--on:#1c1b1f}}
+body{margin:0;min-height:100vh;display:flex;align-items:center;justify-content:center;background:var(--bg);color:var(--fg);font:16px/1.5 system-ui,-apple-system,sans-serif}
+main{max-width:420px;padding:24px 16px;text-align:center}
+h1{font-size:22px;margin:0 0 8px}p{color:var(--muted);margin:0 0 24px;overflow-wrap:anywhere}
+a{display:block;margin:12px 0;padding:14px 20px;border-radius:999px;text-decoration:none;font-weight:600}
+.primary{background:var(--accent);color:var(--on)}.secondary{border:1px solid var(--muted);color:var(--fg)}
+</style></head><body><main>
+<h1>AIOStreams</h1>
+<p>Opens ${base} in a new tab.</p>
+<a class="primary" href="${base}/dashboard" target="_blank" rel="noopener noreferrer">Open dashboard</a>
+<a class="secondary" href="${base}/stremio/configure" target="_blank" rel="noopener noreferrer">Configure Stremio add-on</a>
+</main></body></html>
+`;
+}
+
+export function startLauncher(baseUrl, { port = INGRESS_PORT, allowed = INGRESS_PROXY } = {}) {
+  const page = launcherPage(baseUrl);
+  const server = createServer((request, response) => {
+    const remote = (request.socket.remoteAddress || "").replace(/^::ffff:/, "");
+    if (allowed && remote !== allowed) {
+      response.writeHead(403).end();
+      return;
+    }
+    if (request.method !== "GET" && request.method !== "HEAD") {
+      response.writeHead(405, { Allow: "GET, HEAD" }).end();
+      return;
+    }
+    response.writeHead(200, {
+      "Content-Type": "text/html; charset=utf-8",
+      "Cache-Control": "no-store",
+      "Content-Security-Policy": "default-src 'none'; style-src 'unsafe-inline'; base-uri 'none'; form-action 'none'",
+      "Referrer-Policy": "no-referrer",
+      "X-Content-Type-Options": "nosniff",
+    });
+    response.end(request.method === "HEAD" ? undefined : page);
+  });
+  server.on("error", (error) => {
+    console.error(`[AIOStreams add-on] Web UI launcher unavailable: ${error.message}`);
+  });
+  return server.listen(port);
+}
+
 export function loadOptions(optionsPath) {
   try {
     return JSON.parse(readFileSync(optionsPath, "utf8"));
@@ -153,6 +213,8 @@ export function main() {
     env: environment,
     stdio: "inherit",
   });
+  // A launcher failure is logged and must never stop AIOStreams.
+  const launcher = startLauncher(environment.BASE_URL);
 
   let shutdownRequested = false;
   for (const signal of ["SIGTERM", "SIGINT", "SIGHUP"]) {
@@ -166,6 +228,7 @@ export function main() {
     process.exitCode = 1;
   });
   child.on("exit", (code, signal) => {
+    launcher.close();
     if (signal && !shutdownRequested) {
       console.error(`[AIOStreams add-on] AIOStreams stopped after ${signal}.`);
       process.exitCode = 1;

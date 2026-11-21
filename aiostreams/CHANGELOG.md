@@ -1,5 +1,15 @@
 # Changelog
 
+## 0.2.2
+
+- **Open Web UI** now works from anywhere Home Assistant is reachable. It
+  opens a small page through Home Assistant ingress with links to the
+  AIOStreams dashboard and configure page at `base_url`. Previously it pointed
+  at `http://<the host you opened Home Assistant on>:3000/stremio/configure`,
+  which fails when Home Assistant is opened through a domain or proxy that
+  does not forward port 3000. AIOStreams cannot be embedded through ingress
+  itself, because it expects to be served from the root of its host.
+
 ## 0.2.1
 
 - Upgrade AIOStreams to `v2.38.1`: Jellyfin Live TV, ordered audio/subtitle

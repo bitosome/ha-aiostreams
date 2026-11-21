@@ -45,8 +45,9 @@ because changing it makes existing encrypted configurations unreadable.
 1. Save the add-on configuration and start it.
 2. Check the log for `Starting with BASE_URL=...` and a successful AIOStreams
    startup.
-3. Select **Open Web UI**, or browse to
-   `http://HOME_ASSISTANT_HOST:3000/stremio/configure`.
+3. Select **Open Web UI** and then **Open dashboard** (it opens `base_url` in
+   a new tab), or browse to `http://HOME_ASSISTANT_HOST:3000/dashboard` on the
+   LAN.
 4. Sign in with the configured administrator credentials.
 5. Configure sources, debrid services, filters, and other runtime settings in
    the AIOStreams interface.

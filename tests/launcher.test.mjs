@@ -6,8 +6,10 @@ import test from "node:test";
 
 import {
   buildEnvironment,
+  launcherPage,
   normalizeBaseUrl,
   resolveSecret,
+  startLauncher,
 } from "../aiostreams/run-addon.mjs";
 
 test("normalizes the public base URL", () => {
@@ -79,4 +81,32 @@ test("rejects credential separators that AIOStreams cannot encode", () => {
       ),
     /cannot contain a comma/,
   );
+});
+
+test("web UI page links to the public dashboard and escapes the URL", () => {
+  const page = launcherPage("https://aiostreams.example.com");
+  assert.match(page, /href="https:\/\/aiostreams\.example\.com\/dashboard" target="_blank" rel="noopener noreferrer"/);
+  assert.match(page, /href="https:\/\/aiostreams\.example\.com\/stremio\/configure"/);
+  assert.doesNotMatch(launcherPage('https://x.example/"><script>'), /<script>/);
+});
+
+test("web UI launcher answers only the ingress proxy", async () => {
+  const listen = (allowed) =>
+    new Promise((resolve) => {
+      const server = startLauncher("https://aiostreams.example.com", { port: 0, allowed });
+      server.on("listening", () => resolve(server));
+    });
+  const url = (server) => `http://127.0.0.1:${server.address().port}/`;
+
+  const open = await listen("127.0.0.1");
+  const response = await fetch(url(open));
+  assert.equal(response.status, 200);
+  assert.match(response.headers.get("content-security-policy"), /default-src 'none'/);
+  assert.match(await response.text(), /Open dashboard/);
+  assert.equal((await fetch(url(open), { method: "POST" })).status, 405);
+  open.close();
+
+  const closed = await listen("172.30.32.2");
+  assert.equal((await fetch(url(closed))).status, 403);
+  closed.close();
 });

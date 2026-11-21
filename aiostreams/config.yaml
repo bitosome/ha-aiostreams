@@ -1,5 +1,5 @@
 name: AIOStreams
-version: "0.2.1"
+version: "0.2.2"
 slug: aiostreams
 description: Self-host AIOStreams, the configurable Stremio add-on aggregator
 url: https://github.com/bitosome/ha-aiostreams
@@ -7,7 +7,9 @@ arch:
   - amd64
   - aarch64
 backup: cold
-webui: http://[HOST]:[PORT:3000]/stremio/configure
+ingress: true
+ingress_port: 8099
+panel_icon: mdi:play-network
 ports:
   3000/tcp: 3000
 ports_description:

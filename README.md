@@ -19,8 +19,8 @@ port 3000.
 3. Install **AIOStreams**.
 4. Set the required `base_url` and administrator password in the Configuration
    tab, then start the add-on.
-5. Open `http://HOME_ASSISTANT_HOST:3000/stremio/configure` or use **Open Web
-   UI**.
+5. Use **Open Web UI** (links to the dashboard at `base_url`), or open
+   `http://HOME_ASSISTANT_HOST:3000/dashboard` on the LAN.
 
 See [the add-on documentation](aiostreams/DOCS.md) for HTTPS, reverse proxy,
 backup, and migration guidance.
